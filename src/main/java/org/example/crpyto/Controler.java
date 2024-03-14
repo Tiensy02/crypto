@@ -22,22 +22,22 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.Map;
 
 @CrossOrigin(origins = "*")
 @RestController
 public class Controler {
-    @Value("${public.file.path}")
-    private String publicKeyFilePath;
-    @Value("${private.file.path}")
-    private String privateKeyFilePath;
-    @Value("${secret.file.path}")
-    private String secretFilePath;
     @PostMapping("/key")
     public HttpStatus test(@RequestBody String secretKeyEncrypted ) throws NoSuchPaddingException, NoSuchAlgorithmException, IOException, InvalidKeySpecException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        File currentDir = new File("");
+
+        // Lấy đường dẫn tuyệt đối của thư mục hiện tại
+        String absolutePath = currentDir.getAbsolutePath();
+        System.out.println("Đường dẫn tuyệt đối của thư mục hiện tại: " + absolutePath);
 
         // khởi tạo privateKey để giải mã
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        File privateKeyFile = new File (privateKeyFilePath);
+        File privateKeyFile = new File (absolutePath+"/src/main/resources/private.txt");
         byte[] privateKeyBytes = Files.readAllBytes(privateKeyFile.toPath());
         EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
         PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
@@ -55,7 +55,7 @@ public class Controler {
         String secretKey = new String(decrypted, StandardCharsets.UTF_8);
 
         // Lưu trữ secret Key
-        try (FileOutputStream fos = new FileOutputStream(secretFilePath)) {
+        try (FileOutputStream fos = new FileOutputStream(absolutePath+"/src/main/resources/secret.txt")) {
             fos.write(secretKey.getBytes());
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -67,10 +67,11 @@ public class Controler {
 
 
     @GetMapping("/key")
-    public String getPublicKey() throws IOException {
-        File publicKeyFile = new File(publicKeyFilePath);
+    public String getPublicKey() throws IOException, InterruptedException {
+        File publicKeyFile = new File("./src/main/resources/public.txt");
         byte[] publicKeyBytes = Files.readAllBytes(publicKeyFile.toPath());
         String publicKeyTest = Base64.getEncoder().encodeToString(publicKeyBytes);
+
         return publicKeyTest;
     }
 
